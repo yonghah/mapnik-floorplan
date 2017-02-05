@@ -127,7 +127,7 @@ class Ufs(mapnik.Style):
 
     def get_fill(self, color):
         fsb = mapnik.PolygonSymbolizer()
-        c_code = color.encode('ascii','ignore')
+        c_code = color.encode('ascii', 'ignore')
         fsb.fill = mapnik.Color(c_code)
         return fsb
 
@@ -136,8 +136,6 @@ class Ufs(mapnik.Style):
         lsb.stroke = mapnik.Color(color)
         lsb.stroke_width = width
         return lsb
-
-
 
 
 class Datasource:
@@ -153,7 +151,8 @@ class Datasource:
         self.query = "(select {} {} \
             from {} \
             where bldrecnbr='{}' \
-            and floor='{}') as foo".format(geometry, more_fields, table, bld, flr)
+            and floor='{}') as foo".format(
+                geometry, more_fields, table, bld, flr)
 
     def get(self):
         return mapnik.PostGIS(
