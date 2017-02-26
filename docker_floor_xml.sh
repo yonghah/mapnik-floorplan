@@ -1,2 +1,1 @@
-docker run -v ~/repo/room-slice:/home -w /home/src --net=host mapnik
-/home/src/floor_xml.py
+docker run -v ~/repo/room-slice:/home -w /home/src --net=host mapnik /home/src/floor_xml.py

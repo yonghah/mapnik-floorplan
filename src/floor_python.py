@@ -6,25 +6,34 @@ import json
 
 
 def main():
-
+    srid = 2253
+    buff = 2
     bd = '1005037'
     flr = '03'
-    angle = -0.03
-    print_floor(bd, flr, angle)
+    rid = '2114796'
+    angle = 0
+    bbox_string = get_bbox(rid, srid=srid, buff=buff)
+    bbox = mapnik.Box2d.from_string(bbox_string[0]
+                                    .replace("BOX", "")
+                                    .replace("(", "")
+                                    .replace(")", ""))
+    # print_floor(bd, flr, angle)
+    print_floor(bd, flr, angle, extent=bbox)
+    # print_floor(bd, flr, angle, zoom=0.25)
 
 
-def print_floor(bd, flr, angle):
+def print_floor(bd, flr, angle, extent=None, zoom=None):
     m = Map()
     st_floor = Sfs('Floor', '#000000')
     st_room = Sfs('Room', '#FFFFFF')
     st_graphic = Sls('Graphic', '#000000', 0.5)
 
     # name, table, field
-    st_room_dept = Ufs('Dept', "dept.json", 'deptid')
+    # st_room_dept = Ufs('Dept', "dept.json", 'deptid')
 
     m.add_style(st_floor)
     m.add_style(st_room)
-    m.add_style(st_room_dept)
+    # m.add_style(st_room_dept)
     m.add_style(st_graphic)
 
     floor = Layer('floor', Datasource(bd, flr, 'floor', angle=angle).get())
@@ -35,7 +44,7 @@ def print_floor(bd, flr, angle):
         bd, flr, 'room',
         angle=angle,
         fields=['deptid']).get())
-    room.add_style(st_room_dept)
+    room.add_style(st_room)
     m.add_layer(room)
 
     graphic = Layer('graphic',
@@ -43,15 +52,21 @@ def print_floor(bd, flr, angle):
     graphic.add_style(st_graphic)
     m.add_layer(graphic)
 
-    m.zoom_all()
+    if extent:
+        m.zoom_to_box(extent)
+    elif zoom:
+        m.zoom(zoom)
+    else:
+        m.zoom_all()
+
     mapnik.render_to_file(m, '../image/world.png', 'png')
     print("rendered image to 'world.png'")
 
 
 class Map(mapnik.Map):
     def __init__(self):
-        width = 600
-        height = 300
+        width = 100
+        height = 100
         mapnik.Map.__init__(self, width, height)
         self.background = mapnik.Color("white")
         self.srs = "+init=epsg:2253"
@@ -102,13 +117,12 @@ class Sls(mapnik.Style):
 
 
 class Ufs(mapnik.Style):
-    '''Unique fill sytle. Under construction'''
+    '''Unique fill sytle.'''
     def __init__(self, name, config_file, field):
         mapnik.Style.__init__(self)
         self.name = name
         self.config = self.get_config(config_file)
         self.field = field
-        print(self.config)
         self.create_rules(self.config["map"])
 
     def get_config(self, config_file):
@@ -136,6 +150,19 @@ class Ufs(mapnik.Style):
         lsb.stroke = mapnik.Color(color)
         lsb.stroke_width = width
         return lsb
+
+
+class StyleLabel(mapnik.Style):
+    ''' python-mapnik doesn't support text symbolizer well'''
+    def __init__(self, name, field):
+        mapnik.Style.__init__(self)
+        self.name = name
+        rule = mapnik.Rule()
+        sb = mapnik.TextSymbolizer(
+            mapnik.Expression('[rmnbr]'),
+            'DejaVu Sans Bold', 8, mapnik.Color('black'))
+        rule.symbols.append(sb)
+        self.rules.append(rule)
 
 
 class Datasource:
@@ -180,15 +207,17 @@ def get_origin(bd, flr):
     return result
 
 
-def get_bbox(rid):
+def get_bbox(rid, srid=None, buff=0):
     connection = psycopg2.connect(
         host='localhost',
         database="geo",
         user="yonghah",
         password="1111")
     cursor = connection.cursor()
-    query = "SELECT ST_AsText(ST_Extent(wkb_geometry)) from room \
-        where rmrecnbr='{}'".format(rid)
+    query = "SELECT ST_Extent(ST_Buffer(ST_Transform(wkb_geometry,{}), {})) \
+        from room \
+        where rmrecnbr='{}'".format(srid, buff, rid)
+    print(query)
     cursor.execute(query)
     result = cursor.fetchone()
     return result
