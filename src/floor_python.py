@@ -6,23 +6,16 @@ import json
 
 
 def main():
-    srid = 2253
-    buff = 2
     bd = '1005037'
     flr = '03'
     rid = '2114796'
-    angle = 0
-    bbox_string = get_bbox(rid, srid=srid, buff=buff)
-    bbox = mapnik.Box2d.from_string(bbox_string[0]
-                                    .replace("BOX", "")
-                                    .replace("(", "")
-                                    .replace(")", ""))
-    # print_floor(bd, flr, angle)
-    print_floor(bd, flr, angle, extent=bbox)
-    # print_floor(bd, flr, angle, zoom=0.25)
+
+    bbox_string = get_bbox(rid)
+    bbox = mapnik.Box2d.from_string(bbox_string)
+    print_floor(bd, flr, extent=bbox)
 
 
-def print_floor(bd, flr, angle, extent=None, zoom=None):
+def print_floor(bd, flr, angle=0, extent=None, zoom=None):
     m = Map()
     st_floor = Sfs('Floor', '#000000')
     st_room = Sfs('Room', '#FFFFFF')
@@ -207,7 +200,7 @@ def get_origin(bd, flr):
     return result
 
 
-def get_bbox(rid, srid=None, buff=0):
+def get_bbox(rid, srid=2253, buff=2):
     connection = psycopg2.connect(
         host='localhost',
         database="geo",
@@ -217,9 +210,9 @@ def get_bbox(rid, srid=None, buff=0):
     query = "SELECT ST_Extent(ST_Buffer(ST_Transform(wkb_geometry,{}), {})) \
         from room \
         where rmrecnbr='{}'".format(srid, buff, rid)
-    print(query)
     cursor.execute(query)
     result = cursor.fetchone()
+    result = result[0].replace("BOX", "").replace("(", "").replace(")", "")
     return result
 
 
