@@ -6,16 +6,27 @@ import json
 
 
 def main():
-    bd = '1005037'
-    flr = '03'
-    rid = '2114796'
+    # bd = '1005037'
+    # flr = '03'
+    # rid = '2114796'
 
+    restrooms = ['040', '919']
+    rs = get_rooms_by_rmtyps(restrooms)
+    for rid in rs:
+        try:
+            print_room(rid)
+        except:
+            print("error in {}".format(rid))
+
+
+def print_room(rid):
     bbox_string = get_bbox(rid)
     bbox = mapnik.Box2d.from_string(bbox_string)
-    print_floor(bd, flr, extent=bbox)
+    bld, flr = get_bldflr(rid)
+    print_floor(bld, flr, extent=bbox, filename=rid)
 
 
-def print_floor(bd, flr, angle=0, extent=None, zoom=None):
+def print_floor(bd, flr, angle=0, extent=None, zoom=None, filename='world'):
     m = Map()
     st_floor = Sfs('Floor', '#000000')
     st_room = Sfs('Room', '#FFFFFF')
@@ -52,8 +63,8 @@ def print_floor(bd, flr, angle=0, extent=None, zoom=None):
     else:
         m.zoom_all()
 
-    mapnik.render_to_file(m, '../image/world.png', 'png')
-    print("rendered image to 'world.png'")
+    mapnik.render_to_file(m, '../image/{}.png'.format(filename), 'png')
+    print("rendered image to '{}.png'".format(filename))
 
 
 class Map(mapnik.Map):
@@ -213,6 +224,35 @@ def get_bbox(rid, srid=2253, buff=2):
     cursor.execute(query)
     result = cursor.fetchone()
     result = result[0].replace("BOX", "").replace("(", "").replace(")", "")
+    return result
+
+
+def get_bldflr(rid):
+    conn = get_connection()
+    cursor = conn.cursor()
+    query = "SELECT bldrecnbr, floor from room \
+        where rmrecnbr='{}'".format(rid)
+    cursor.execute(query)
+    result = cursor.fetchone()
+    return result[0], result[1]
+
+
+def get_connection():
+    return psycopg2.connect(
+        host='localhost',
+        database="geo",
+        user="yonghah",
+        password="1111")
+
+
+def get_rooms_by_rmtyps(rmtyps):
+    conn = get_connection()
+    cursor = conn.cursor()
+    rmtyps_query = "'" + "','".join(rmtyps) + "'"
+    query = "SELECT rmrecnbr from room \
+        where rmtyp in ({})".format(rmtyps_query)
+    cursor.execute(query)
+    result = map(lambda x: x[0], cursor.fetchall())
     return result
 
 
