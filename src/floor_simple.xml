@@ -1,0 +1,20 @@
+<Map background-color="white" srs="+init=epsg:2253">
+<Style name="Floor">
+    <Rule>
+        <PolygonSymbolizer fill="#066666" />
+        <LineSymbolizer stroke="#600000" stroke-width="0.1" />
+    </Rule>
+</Style>
+<Layer name="Floors" status="on">
+	<StyleName>Floor</StyleName>
+	<Datasource>
+	  <Parameter name="type">postgis</Parameter>
+	  <Parameter name="host">10.200.10.1</Parameter>
+	  <Parameter name="dbname">yonghah</Parameter>
+	  <Parameter name="user">yonghah</Parameter>      
+	  <Parameter name="password">1111</Parameter>
+	  <Parameter name="table">(select wkb_geometry from floor where bldrecnbr='1005037' and floor='03') as foo</Parameter>
+	  <Parameter name="extent_from_subquery">true</Parameter>
+	</Datasource>
+</Layer>
+</Map>
