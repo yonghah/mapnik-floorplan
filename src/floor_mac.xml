@@ -13,7 +13,7 @@
 	  <Parameter name="dbname">yonghah</Parameter>
 	  <Parameter name="user">yonghah</Parameter>      
 	  <Parameter name="password">1111</Parameter>
-	  <Parameter name="table">(select wkb_geometry from room where bldrecnbr='1005037' and floor='03') as foo</Parameter>
+	  <Parameter name="table">(select shape from floor where bldrecnbr='1005037' and floor='03') as foo</Parameter>
 	  <Parameter name="extent_from_subquery">true</Parameter>
 	</Datasource>
 </Layer>

@@ -10,21 +10,23 @@ def main():
     # flr = '03'
     # rid = '2114796'
 
-    restrooms = ['040', '919']
-    rs = get_rooms_by_rmtyps(restrooms)
-    print_room(rs[0])
+    # restrooms = ['040', '919']
+    # rs = get_rooms_by_rmtyps(restrooms)
+    rs = get_all_rooms()
+    print_room(rs[0][0], rs[0][1])
+    # print(rs[0])
 
 
-def print_room(rid):
+def print_room(rid, rmtyp):
     bbox_string = get_bbox(rid)
     bbox = mapnik.Box2d.from_string(bbox_string)
     bld, flr = get_bldflr(rid)
-    print_floor(bld, flr, extent=bbox, filename=rid)
+    print_floor(bld, flr, extent=bbox, filename="{}_{}".format(rmtyp, rid))
 
 
 def print_floor(bd, flr, angle=0, extent=None, zoom=None, filename='world'):
     m = Map()
-    st_floor = Sfs('Floor', '#000000')
+    st_floor = Sfs('Floor', '#999999')
     st_room = Sfs('Room', '#FFFFFF')
     st_graphic = Sls('Graphic', '#000000', 0.5)
 
@@ -66,8 +68,8 @@ def print_floor(bd, flr, angle=0, extent=None, zoom=None, filename='world'):
 
 class Map(mapnik.Map):
     def __init__(self):
-        width = 100
-        height = 100
+        width = 256
+        height = 256
         mapnik.Map.__init__(self, width, height)
         self.background = mapnik.Color("white")
         self.srs = "+init=epsg:2253"
@@ -168,11 +170,11 @@ class StyleLabel(mapnik.Style):
 
 class Datasource:
     def __init__(self, bld, flr, table, angle=0, fields=[]):
-        geometry = 'wkb_geometry'
+        geometry = 'shape'
         if angle != 0:
             ox, oy = get_origin(bld, flr)
-            geometry = "ST_Rotate(wkb_geometry, {}, {}, {}) as \
-                wkb_geometry".format(angle, ox, oy)
+            geometry = "ST_Rotate(shape, {}, {}, {}) as \
+                shape".format(angle, ox, oy)
         more_fields = ''
         if fields:
             more_fields = ', ' + ', '.join(fields)
@@ -200,8 +202,8 @@ def get_origin(bd, flr):
         user="yonghah",
         password="1111")
     cursor = connection.cursor()
-    query = "SELECT ST_X(ST_Centroid(wkb_geometry)), \
-        ST_Y(ST_Centroid(wkb_geometry)) from floor where bldrecnbr='{}' \
+    query = "SELECT ST_X(ST_Centroid(shape)), \
+        ST_Y(ST_Centroid(shape)) from floor where bldrecnbr='{}' \
         and floor='{}'".format(bd, flr)
     cursor.execute(query)
     result = cursor.fetchone()
@@ -215,7 +217,7 @@ def get_bbox(rid, srid=2253, buff=2):
         user="yonghah",
         password="1111")
     cursor = connection.cursor()
-    query = "SELECT ST_Extent(ST_Buffer(ST_Transform(wkb_geometry,{}), {})) \
+    query = "SELECT ST_Extent(ST_Buffer(ST_Transform(shape,{}), {})) \
         from room \
         where rmrecnbr='{}'".format(srid, buff, rid)
     cursor.execute(query)
@@ -246,10 +248,20 @@ def get_rooms_by_rmtyps(rmtyps):
     conn = get_connection()
     cursor = conn.cursor()
     rmtyps_query = "'" + "','".join(rmtyps) + "'"
-    query = "SELECT rmrecnbr from room \
+    query = "SELECT rmrecnbr, rmtyp from room \
         where rmtyp in ({})".format(rmtyps_query)
     cursor.execute(query)
-    result = map(lambda x: x[0], cursor.fetchall())
+    result = map(lambda x: (x[0], x[1]), cursor.fetchall())
+    return result
+
+
+def get_all_rooms():
+    conn = get_connection()
+    cursor = conn.cursor()
+    query = "SELECT rmrecnbr, rmtyp from room \
+        where rmtyp != '020' and not (rmtyp = '315' and rmsubtyp = '08')"
+    cursor.execute(query)
+    result = map(lambda x: (x[0], x[1]), cursor.fetchall())
     return result
 
 
