@@ -1,4 +1,5 @@
 image/*
 *.swp
-.ropeproject
-.ropeproject/*
+src/.ropeproject/*
+.DS_Store
+

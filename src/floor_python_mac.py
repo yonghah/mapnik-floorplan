@@ -3,28 +3,42 @@
 import mapnik
 import psycopg2
 import json
+import os
 
 
 def main():
     # bd = '1005037'
     # flr = '03'
     # rid = '2114796'
-
-    # restrooms = ['040', '919']
-    # rs = get_rooms_by_rmtyps(restrooms)
-    rs = get_all_rooms()
-    print_room(rs[0][0], rs[0][1])
-    # print(rs[0])
+    print_all_rooms()
 
 
-def print_room(rid, rmtyp):
+def print_restrooms():
+    restrooms = ['040', '919']
+    rs = get_rooms_by_rmtyps(restrooms)
+    for room in rs:
+        print_room(room[0], room[1])
+
+
+def print_all_rooms():
+    rs = get_all_rooms(['040', '919'])
+    # print_room(rs[0][0], rs[0][1])
+    for room in rs:
+        print_room(room[0], room[1], room[2])
+
+
+def print_room(rid, rmtyp, rmsubtyp):
     bbox_string = get_bbox(rid)
     bbox = mapnik.Box2d.from_string(bbox_string)
     bld, flr = get_bldflr(rid)
-    print_floor(bld, flr, extent=bbox, filename="{}_{}".format(rmtyp, rid))
+    print_floor(bld, flr, extent=bbox,
+                directory=rmtyp,
+                filename="{}_{}_{}".format(rmtyp, rmsubtyp, rid))
 
 
-def print_floor(bd, flr, angle=0, extent=None, zoom=None, filename='world'):
+def print_floor(bd, flr, angle=0, extent=None, zoom=None,
+                directory='.',
+                filename='world'):
     m = Map()
     st_floor = Sfs('Floor', '#999999')
     st_room = Sfs('Room', '#FFFFFF')
@@ -61,9 +75,13 @@ def print_floor(bd, flr, angle=0, extent=None, zoom=None, filename='world'):
     else:
         m.zoom_all()
 
+    base_dir = "../image/rmtyp"
+    save_path = os.path.join(base_dir, directory)
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
     # mapnik.save_map(m, "../image/{}.xml".format(filename))
-    mapnik.render_to_file(m, '../image/{}.png'.format(filename), 'png')
-    print("rendered image to '{}.png'".format(filename))
+    save_file = os.path.join(save_path, "{}.png".format(filename))
+    mapnik.render_to_file(m, save_file)
 
 
 class Map(mapnik.Map):
@@ -255,13 +273,17 @@ def get_rooms_by_rmtyps(rmtyps):
     return result
 
 
-def get_all_rooms():
+def get_all_rooms(rmtyps=[]):
     conn = get_connection()
     cursor = conn.cursor()
-    query = "SELECT rmrecnbr, rmtyp from room \
-        where rmtyp != '020' and not (rmtyp = '315' and rmsubtyp = '08')"
+    rmtyps_query = ''
+    if rmtyps:
+        rmtyps_query = "and rmtyp in ('" + "','".join(rmtyps) + "')"
+    query = "SELECT rmrecnbr, rmtyp, rmsubtyp from room \
+        where rmtyp != '020' and not (rmtyp = '315' and rmsubtyp = '08') {} \
+        order by rmtyp, rmsubtyp;".format(rmtyps_query)
     cursor.execute(query)
-    result = map(lambda x: (x[0], x[1]), cursor.fetchall())
+    result = map(lambda x: (x[0], x[1], x[2]), cursor.fetchall())
     return result
 
 
