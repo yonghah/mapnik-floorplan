@@ -10,7 +10,8 @@ def main():
     # bd = '1005037'
     # flr = '03'
     # rid = '2114796'
-    print_all_rooms()
+    # print_all_rooms()
+    print_sample_rooms()
 
 
 def print_restrooms():
@@ -27,12 +28,19 @@ def print_all_rooms():
         print_room(room[0], room[1], room[2])
 
 
+def print_sample_rooms():
+    rs = get_sample_rooms()
+    for room in rs:
+        print_room(room[0], room[1], room[2])
+
+
 def print_room(rid, rmtyp, rmsubtyp):
     bbox_string = get_bbox(rid)
     bbox = mapnik.Box2d.from_string(bbox_string)
     bld, flr = get_bldflr(rid)
     print_floor(bld, flr, extent=bbox,
-                directory=rmtyp,
+                # directory=rmtyp,
+                directory='other',
                 filename="{}_{}_{}".format(rmtyp, rmsubtyp, rid))
 
 
@@ -282,6 +290,20 @@ def get_all_rooms(rmtyps=[]):
     query = "SELECT rmrecnbr, rmtyp, rmsubtyp from room \
         where rmtyp != '020' and not (rmtyp = '315' and rmsubtyp = '08') {} \
         order by rmtyp, rmsubtyp;".format(rmtyps_query)
+    cursor.execute(query)
+    result = map(lambda x: (x[0], x[1], x[2]), cursor.fetchall())
+    return result
+
+
+def get_sample_rooms():
+    conn = get_connection()
+    cursor = conn.cursor()
+    query = "select rmrecnbr, rmtyp, rmsubtyp from ( \
+        SELECT rmrecnbr, rmtyp, rmsubtyp from room tablesample system(4) \
+        where rmtyp != '020' and not (rmtyp ='315' and rmsubtyp = '08') \
+        and not (rmtyp in ('010', '020', '030', '040', '050', '060', '070', \
+        '080', '090', '919', ''))) \
+        as foo"
     cursor.execute(query)
     result = map(lambda x: (x[0], x[1], x[2]), cursor.fetchall())
     return result
