@@ -11,14 +11,16 @@ def main():
     # flr = '03'
     # rid = '2114796'
     # print_all_rooms()
-    print_sample_rooms()
+    # print_sample_rooms()
+    print_restrooms()
 
 
 def print_restrooms():
     restrooms = ['040', '919']
     rs = get_rooms_by_rmtyps(restrooms)
     for room in rs:
-        print_room(room[0], room[1])
+        if room[0] == '2141496':
+            print_room(room[0], room[1], room[2])
 
 
 def print_all_rooms():
@@ -40,7 +42,7 @@ def print_room(rid, rmtyp, rmsubtyp):
     bld, flr = get_bldflr(rid)
     print_floor(bld, flr, extent=bbox,
                 # directory=rmtyp,
-                directory='other',
+                directory='restroom',
                 filename="{}_{}_{}".format(rmtyp, rmsubtyp, rid))
 
 
@@ -274,10 +276,10 @@ def get_rooms_by_rmtyps(rmtyps):
     conn = get_connection()
     cursor = conn.cursor()
     rmtyps_query = "'" + "','".join(rmtyps) + "'"
-    query = "SELECT rmrecnbr, rmtyp from room \
+    query = "SELECT rmrecnbr, rmtyp, rmsubtyp from room \
         where rmtyp in ({})".format(rmtyps_query)
     cursor.execute(query)
-    result = map(lambda x: (x[0], x[1]), cursor.fetchall())
+    result = map(lambda x: (x[0], x[1], x[2]), cursor.fetchall())
     return result
 
 
