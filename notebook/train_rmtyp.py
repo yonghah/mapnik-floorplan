@@ -15,7 +15,7 @@ def main():
     width=256
 
     # batch size
-    bsize = 50
+    bsize = 100
 
     # Associate the "label" and "image" objects with the corresponding features read from
     # a single example in the training data file
@@ -41,7 +41,7 @@ def main():
             min_after_dequeue=1000)
 
     # interactive session allows inteleaving of building and running steps
-    sess = tf.InteractiveSession()
+    sess = tf.Session()
 
     # x is the input array, which will contain the data from an image
     # this creates a placeholder for x, to be populated later
@@ -174,27 +174,29 @@ def main():
 
             # run the training step with feed of images
             if simpleModel:
-                train_step.run(feed_dict={x: batch_xs, y_: batch_ys})
+	        with sess.as_default():
+                    train_step.run(feed_dict={x: batch_xs, y_: batch_ys})
             else:
-                train_step.run(feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 0.5})
+	        with sess.as_default():
+                    train_step.run(feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 0.5})
 
 
-            if (i+1)%bsize == 0: # then perform validation
-
+            if (i+1)%100 == 0: # then perform validation
                 # get a validation batch
                 vbatch_xs, vbatch_ys = sess.run([vimageBatch, vlabelBatch])
                 if simpleModel:
-                    train_accuracy = accuracy.eval(feed_dict={
-                    x:vbatch_xs, y_: vbatch_ys})
+	            with sess.as_default():
+                    	train_accuracy = accuracy.eval(feed_dict={x:vbatch_xs, y_: vbatch_ys})
                 else:
-                    train_accuracy = accuracy.eval(feed_dict={
-                    x:vbatch_xs, y_: vbatch_ys, keep_prob: 1.0})
+	            with sess.as_default():
+                        train_accuracy = accuracy.eval(feed_dict={x:vbatch_xs, y_: vbatch_ys, keep_prob: 1.0})
                 print("step %d, training accuracy %g"%(i+1, train_accuracy))
 
 
         # finalise
         coord.request_stop()
         coord.join(threads)
+        sess.close()
 
 
 def getImage(filename, height, width, nClass):
