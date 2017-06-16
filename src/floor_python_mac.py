@@ -5,44 +5,48 @@ import psycopg2
 import json
 import os
 
+BASE_DIR = '../image/rmtyp128'
+IMAGE_RES = 128
+
 
 def main():
     # bd = '1005037'
     # flr = '03'
     # rid = '2114796'
     # print_all_rooms()
-    # print_sample_rooms()
-    print_restrooms()
+    print_sample_rooms()
+    # print_restrooms()
 
 
-def print_restrooms():
+def print_restrooms(directory='restroom'):
     restrooms = ['040', '919']
     rs = get_rooms_by_rmtyps(restrooms)
+    print(len(rs))
     for room in rs:
-        if room[0] == '2141496':
-            print_room(room[0], room[1], room[2])
+        print_room(directory, room[0], room[1], room[2])
 
 
-def print_all_rooms():
+def print_all_rooms(directory='all'):
     rs = get_all_rooms(['040', '919'])
     # print_room(rs[0][0], rs[0][1])
     for room in rs:
-        print_room(room[0], room[1], room[2])
+        print_room(directory, room[0], room[1], room[2])
 
 
-def print_sample_rooms():
+def print_sample_rooms(directory='other'):
     rs = get_sample_rooms()
+    print(len(rs))
     for room in rs:
-        print_room(room[0], room[1], room[2])
+        print_room(directory, room[0], room[1], room[2])
 
 
-def print_room(rid, rmtyp, rmsubtyp):
+def print_room(directory, rid, rmtyp, rmsubtyp):
     bbox_string = get_bbox(rid)
     bbox = mapnik.Box2d.from_string(bbox_string)
     bld, flr = get_bldflr(rid)
     print_floor(bld, flr, extent=bbox,
                 # directory=rmtyp,
-                directory='restroom',
+                directory=directory,
                 filename="{}_{}_{}".format(rmtyp, rmsubtyp, rid))
 
 
@@ -85,7 +89,7 @@ def print_floor(bd, flr, angle=0, extent=None, zoom=None,
     else:
         m.zoom_all()
 
-    base_dir = "../image/rmtyp"
+    base_dir = BASE_DIR
     save_path = os.path.join(base_dir, directory)
     if not os.path.exists(save_path):
         os.makedirs(save_path)
@@ -96,8 +100,8 @@ def print_floor(bd, flr, angle=0, extent=None, zoom=None,
 
 class Map(mapnik.Map):
     def __init__(self):
-        width = 256
-        height = 256
+        width = IMAGE_RES
+        height = IMAGE_RES
         mapnik.Map.__init__(self, width, height)
         self.background = mapnik.Color("white")
         self.srs = "+init=epsg:2253"

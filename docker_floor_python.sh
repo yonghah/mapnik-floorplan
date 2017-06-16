@@ -1,1 +1,1 @@
-docker run -v ~/repo/room-slice:/home -w /home/src --net=host mapnik /home/src/floor_python.py
+docker run -v ~/work/repo/mapnik-floorplan:/home -w /home/src --net=host mapnik /home/src/floor_python_mac.py
